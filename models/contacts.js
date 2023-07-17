@@ -2,8 +2,19 @@
 const path = require("path");
 const fs = require("fs/promises");
 const { randomUUID } = require("crypto");
+const Joi = require("joi");
 
 const contactsPath = path.join(__dirname, "./contacts.json");
+
+const bodyValidator = (data) => {
+  const schema = Joi.object({
+    name: Joi.string().min(2).max(30).required(),
+    email: Joi.string().required(),
+    phone: Joi.string().min(5).max(15).required(),
+  });
+
+  return schema.validate(data);
+};
 
 const listContacts = async () => {
   const contacts = await fs.readFile(contactsPath);
@@ -48,17 +59,13 @@ const addContact = async ({ name, email, phone }) => {
 
 const updateContact = async (contact, body, id) => {
   const { name, email, phone } = body;
-  if (!name || !email || !phone) {
-    throw new Error("The required field is missing");
-  } else {
-    contact = {
-      id,
-      name,
-      email,
-      phone,
-    };
-    return contact;
-  }
+  contact = {
+    id,
+    name,
+    email,
+    phone,
+  };
+  return contact;
 };
 
 const updateContacts = async (contactId, body) => {
@@ -68,7 +75,7 @@ const updateContacts = async (contactId, body) => {
   const changeContact = await updateContact(contact, body, contactId);
   contacts.splice(index, 1, changeContact);
   await fs.writeFile(contactsPath, JSON.stringify(contacts));
-  return contacts;
+  return contact;
 };
 
 module.exports = {
@@ -77,4 +84,5 @@ module.exports = {
   removeContact,
   addContact,
   updateContacts,
+  bodyValidator,
 };
